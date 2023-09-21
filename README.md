@@ -1,1 +1,1 @@
-# dsa4266_ribosomes
+# DSA4266 Project 2: Identification of RNA modifications from direct RNA-Seq data
