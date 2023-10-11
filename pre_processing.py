@@ -98,6 +98,7 @@ def pre_processing_entire_kmer():
             for transcript_id, position_kmer in data.items():
                 # iterate over each of the position and {"kmer" : [[]]}
                 for position, kmer_values in position_kmer.items():
+                    position = int(position)
                     # iterate over each of the kmer and the features
                     for kmer, values in kmer_values.items():
                         num_observations = len(values)
@@ -119,6 +120,8 @@ def pre_processing_entire_kmer():
                                                              "dwelling_length1", "sd_signal1", "mean_signal1", 
                                                              "dwelling_length2", "sd_signal2", "mean_signal2",
                                                              "dwelling_length3", "sd_signal3", "mean_signal3"])
+    
+    processed_data['transcript_position'] = processed_data["transcript_position"].astype(int)
     
     return processed_data
 
@@ -198,10 +201,11 @@ def add_labels(processed_data):
     # read in the data file
     data_info = pd.read_csv(data_path)
 
-    data_info.rename(columns = {"transcript_position" : "reference_position"}, inplace=True)
+    if "reference_position" in processed_data.columns:
+        processed_data.rename(columns = {"reference_position" : "transcript_position"}, inplace=True)
 
     # merging the data
-    final_data = processed_data.merge(data_info, how="inner", on=["transcript_id", "reference_position"])
+    final_data = processed_data.merge(data_info, how="inner", on=["transcript_id", "transcript_position"])
 
     return final_data
 
@@ -228,7 +232,7 @@ def add_features(labelled_data):
     for dn in dinucletides:
         # gets the count of the dinucleotide for each of the consecutive 2 sequence of the kmer sequence
         labelled_data[f"{dn}_count"] = labelled_data['kmer_sequence'].apply(
-            lambda seq : sum([seq[i:i+2].count({dn}) for i in range(len(seq) - 1)]))
+            lambda seq : sum([seq[i:i+2].count(dn) for i in range(len(seq) - 1)]))
 
     return labelled_data
 
