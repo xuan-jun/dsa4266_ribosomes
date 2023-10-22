@@ -60,17 +60,17 @@ class NeuralNetModel(nn.Module):
         # first Layer (Note that we start off with 15 Features)
         self.l1 = nn.Linear(15, self.hidden_layers)
         self.relu1 = nn.ReLU()
-        self.dropout1 = nn.Dropout(0.3)
+        self.dropout1 = nn.Dropout(0.2)
 
         # second Layer
-        self.l2 = nn.Linear(self.hidden_layers, 128)
+        self.l2 = nn.Linear(self.hidden_layers, 150)
         self.relu2 = nn.ReLU()
-        self.dropout2 = nn.Dropout(0.1)
+        self.dropout2 = nn.Dropout(0.2)
 
         # third Layer
-        self.l3 = nn.Linear(128, 32)
+        self.l3 = nn.Linear(150, 32)
         self.relu3 = nn.ReLU()
-        self.dropout3 = nn.Dropout(0.01)
+        self.dropout3 = nn.Dropout(0.1)
 
         # fourth Layer
         self.l4 = nn.Linear(32, 1)
