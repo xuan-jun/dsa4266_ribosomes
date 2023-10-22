@@ -14,6 +14,67 @@ from torcheval.metrics.functional import binary_auprc
 from neural_net_model import NeuralNetModel
 from neural_net_pre_process import RNAData
 
+class EarlyStopper:
+    """
+    Class that helps to determine if early stop is required for Neural Network training
+
+    ...
+
+    Attributes
+    ----------
+    patience : int
+        Number of times we allow the `validation_roc_pr` to drop below (max_roc_pr - min_delta)
+    min_delta : float
+        Amount of buffer we allow the `validation_roc_rc` to drop below max_roc_pr and not consider it to be deviating
+    counter : int
+        Counter variable that helps to keep track of how many times the model has dropped below (max_roc_pr - min_delta) within the
+        current max_roc_pr
+    max_roc_pr : float
+        Current best Max area under ROC and PRC (The score is computed based on the summation of Area under ROC and PRC)
+
+    Methods
+    -------
+    early_stop(validation_roc_pr)
+        Checks if the neural network should stop training. It should stop training if the `validation_roc_pr` has been lower than
+        (max_roc_pr - min_delta) for more than the patience
+
+    """
+
+    def __init__(self, patience=3, min_delta=0):
+        """Initialise the EarlyStopper object
+
+        Args:
+            patience (int, optional): Number of times we allow the `validation_roc_pr` to drop below (max_roc_pr - min_delta).
+            Defaults to 3.
+
+            min_delta (int, optional): Amount of buffer we allow the `validation_roc_rc` to drop below max_roc_pr and not consider it to be deviating.
+            Defaults to 0.
+        """
+        self.patience = patience
+        self.min_delta = min_delta
+        self.counter = 0
+        self.max_roc_pr = float("-inf")
+    
+    def early_stop(self, validation_roc_pr):
+        """
+        Checks if the neural network should stop training. It should stop training if the `validation_roc_pr` has been lower than
+        (max_roc_pr - min_delta) for more than the patience
+
+        Args:
+            validation_roc_pr (float): Summation of the current validation area under ROC and PRC
+
+        Returns:
+            bool: Whether the Neural Network should stop early
+        """
+        stop = False
+        if validation_roc_pr > self.max_roc_pr:
+            self.max_roc_pr = validation_roc_pr
+            self.counter = 0
+        elif validation_roc_pr < (self.max_roc_pr - self.min_delta):
+            self.counter += 1
+            stop = self.counter >= self.patience
+        return stop
+
 def parse_arguments():
     """Parses the arguments that are supplied by the user
 
@@ -68,7 +129,7 @@ def evaluate_neural_net(model, rna_data):
         eval_rna_dataloader = rna_data.data_loader()
 
         # loop through eval data
-        for features, labels in eval_rna_dataloader:
+        for features, labels in tqdm(eval_rna_dataloader, total=len(eval_rna_dataloader)):
 
             labels = labels.flatten().type(torch.float32)
             # keep track of all the labels
@@ -114,10 +175,12 @@ def train_neural_net(args):
     if not (os.path.exists(os.path.dirname(args.modelstate_dict))):
         os.mkdir(os.path.dirname(args.modelstate_dict))
 
+    early_stopper = EarlyStopper(patience=3, min_delta=0.05)
     print("Starting Training...")
     for epoch in range(args.num_epochs):
         # set to training mode
         model.train()
+        rna_data.train_mode()
         loop = tqdm(enumerate(rna_dataloader),
                     total=len(rna_dataloader))
         for i, (x, y) in loop:
@@ -135,8 +198,14 @@ def train_neural_net(args):
             loop.set_description(f"Epoch [{epoch+1}/{args.num_epochs}]")
             loop.set_postfix(loss=loss.item())
 
-            # saving the model parameters
+        # evaluate to see what is the score
+        roc_score, pr_score = evaluate_neural_net(model, rna_data)
+        # saving the model parameters
+        if (roc_score + pr_score) >= early_stopper.max_roc_pr:
             torch.save(model.state_dict(), args.modelstate_dict)
+        # check if early stop is required
+        if early_stopper.early_stop(roc_score + pr_score):
+            break
 
     # evaluation
     evaluate_neural_net(model, rna_data)

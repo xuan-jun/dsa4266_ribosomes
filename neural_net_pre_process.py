@@ -43,6 +43,8 @@ class RNAData(Dataset):
         lenght of whole set (if train=False)
     train_size (optional): int
         size of the training set (only applicable if train=True)
+    label_path (optional): str
+        full path to the .info file that contains the labels for the training data (only applicable if train=True)
     gene_dict (optional): Dict
         contains the various sites that are under a particular gene_id (only applicable if train=True)
         Key: gene_id
