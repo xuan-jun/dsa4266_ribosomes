@@ -163,3 +163,4 @@ data/dataset0.json.gz
 data/labelled_agg.csv
 data/labelled_w_features.csv
 *.gz
+*.csv
