@@ -23,20 +23,28 @@ class NeuralNetModel(nn.Module):
 
     embedder: nn.Embedding
         embedding layer that helps to embed the 5-mer sequence
+    norm0:
+        batch norm before passing into the model
     l1:
         first linear layer
+    norm1:
+        batch norm for the first layer
     relu1:
         first activation function
     dropout1:
         first dropout layer
     l2:
         second linear layer
+    norm2:
+        batch norm for the second layer
     relu2:
         second activation function
     dropout2:
         second dropout layer
     l3:
         third linear layer
+    norm3:
+        batch norm for the third layer
     relu3:
         third activation function
     dropout3:

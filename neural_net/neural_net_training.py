@@ -68,9 +68,11 @@ class EarlyStopper:
             bool: Whether the Neural Network should stop early
         """
         stop = False
+        # if the new value higher, update tracker and reset count
         if validation_roc_pr > self.max_roc_pr:
             self.max_roc_pr = validation_roc_pr
             self.counter = 0
+        # if value is too low, increase counter
         elif validation_roc_pr < (self.max_roc_pr - self.min_delta):
             self.counter += 1
             stop = self.counter >= self.patience
@@ -205,6 +207,7 @@ def train_neural_net(args):
 
     # creating the early stopper object
     early_stopper = EarlyStopper(patience=3, min_delta=0.05)
+
     # records the pr and roc score for each iteration
     pr = []
     roc = []
@@ -214,8 +217,11 @@ def train_neural_net(args):
         # set to training mode
         model.train()
         rna_data.train_mode()
+
         loop = tqdm(enumerate(rna_dataloader),
                     total=len(rna_dataloader))
+        
+        # loop through the data
         for i, (x, y) in loop:
             label = y.flatten().type(torch.float32)
             
@@ -228,6 +234,7 @@ def train_neural_net(args):
             optimizer.step()
             optimizer.zero_grad()
 
+            # settings for tqdm 
             loop.set_description(f"Epoch [{epoch+1}/{args.num_epochs}]")
             loop.set_postfix(loss=loss.item())
 
@@ -238,9 +245,8 @@ def train_neural_net(args):
         roc.append(roc_score)
         pd.DataFrame({'roc_score':roc, 'pr_score':pr}).to_csv(args.evalresults_path)
         
-        # saving the model parameters
+        # saving the model parameters if the roc + pr is better than the previous value
         if (roc_score + pr_score) >= early_stopper.max_roc_pr:
-            # torch.save(model.state_dict(), args.modelstate_dict)
             torch.save({
             'epoch': epoch,
             'model_state_dict': model.state_dict(),

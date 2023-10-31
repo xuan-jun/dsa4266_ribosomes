@@ -10,6 +10,7 @@ import pandas as pd
 import gzip
 import json
 import random
+import os
 
 class RNAData(Dataset):
     """
@@ -21,6 +22,8 @@ class RNAData(Dataset):
         full path to the .json file that contain the data required for training/testing
     train : bool
         indicates whether we are using this dataset for training or just purely testing
+    sgNex: bool
+        indicates whether we are using sgNex data. This allows for check if the file is a .json
     read_size : int
         number of reads that we will be using for each site (transcript_id, position)
     batch_size : int
@@ -92,15 +95,17 @@ class RNAData(Dataset):
         returns a DataLoader object with the current Dataset.
     """
 
-    def __init__(self, data_path=None, label_path=None, read_size=20, batch_size=128, train=True, train_size=0.8, seed=1800) -> None:
+    def __init__(self, data_path, label_path=None, read_size=20, batch_size=128,
+                 train=True, sgNex=False, train_size=0.8, seed=1800) -> None:
         """Constructor for the RNAData class
 
         Args:
-            data_path (str, optional): Path to the .json.gz file containing the data. Defaults to None.
+            data_path (str): Path to the .json.gz file containing the data. Or .json file if we are looking at sgNex data.
             label_path (str, optional): Path to the .info file containing the labels, this will only be used if train=True. Defaults to None.
             read_size (int, optional): Number of reads that will be used per site. Defaults to 20.
             batch_size (int, optional): Number of sites we will use per batch for our Neural Network. Defaults to 128.
             train (bool, optional): Indicator if this Dataset should be a training set or not. Defaults to True.
+            sgNext(bool, optional): Indicator if the  
             train_size (float, optional): Training size for the datset, this will only be used if train=True. Defaults to 0.8.
             seed (int, optional): Seed for reproducibility of results. Defaults to 1800.
         """
@@ -108,6 +113,7 @@ class RNAData(Dataset):
         self.train = train
         self.read_size = read_size
         self.batch_size = batch_size
+        self.sgNex = sgNex
         self.data_dict = {}
         self.fivemer_mapping = {}
         self.kmer_sequence_mapping = {}
@@ -148,21 +154,57 @@ class RNAData(Dataset):
         This is used in the constructor for initialisation.
         """
 
+        # check if the path exists
+        if not os.path.exists(self.data_path):
+            raise Exception("Data path does not exist! Please check if the right data path is passed in")
+        
+        # check if the data path has the right extension
+        if self.sgNex and not os.path.splitext(self.data_path)[1] == ".json":
+            raise Exception("SgNex Data needs to end with .json extension, please ensure the right format is given")
+        
+        if not self.sgNex:
+            _, gz_ext = os.path.splitext(self.data_path)
+            filename, json_ext = os.path.splitext(_)
+
+            if (json_ext+gz_ext) != ".json.gz":
+                raise Exception("Data Paths needs to end with the extension .json.gz, please ensure the right format is given")
+
+
+        # stores the intermediate data_dict values
         data_dict = {} 
 
-        with gzip.open(self.data_path, 'r') as f:
-            for transcript in f:
-                data = json.loads(transcript)
+        # processing for non sgNex data, need to unzip
+        if not self.sgNex:
+            with gzip.open(self.data_path, 'r') as f:
+                for transcript in f:
+                    data = json.loads(transcript)
 
-                for transcript_id, position_kmer in data.items():
-                    for position, kmer_values in position_kmer.items():
-                        position = int(position)
-                        for kmer_sequence, values in kmer_values.items():
+                    for transcript_id, position_kmer in data.items():
+                        for position, kmer_values in position_kmer.items():
+                            position = int(position)
+                            for kmer_sequence, values in kmer_values.items():
 
-                            # initialise an empty dict for the transcript_id, position first
-                            data_dict[(transcript_id, position)] = {}
-                            data_dict[(transcript_id, position)]['kmer_sequence'] = kmer_sequence
-                            data_dict[(transcript_id, position)]['signal_features'] = values
+                                # initialise an empty dict for the transcript_id, position first
+                                data_dict[(transcript_id, position)] = {}
+                                data_dict[(transcript_id, position)]['kmer_sequence'] = kmer_sequence
+                                data_dict[(transcript_id, position)]['signal_features'] = values
+        # processing for sgNex, just read as json
+        else:
+            with open(self.data_path, 'r') as f:
+                for transcript in f:
+                    data = json.loads(transcript)
+
+
+                    for transcript_id, position_kmer in data.items():
+                        for position, kmer_values in position_kmer.items():
+                            position = int(position)
+                            for kmer_sequence, values in kmer_values.items():
+
+                                # initialise an empty dict for the transcript_id, position first
+                                data_dict[(transcript_id, position)] = {}
+                                data_dict[(transcript_id, position)]['kmer_sequence'] = kmer_sequence
+                                data_dict[(transcript_id, position)]['signal_features'] = values
+
 
         self.data_dict = data_dict
 
@@ -174,6 +216,11 @@ class RNAData(Dataset):
         This is used in the constructor for initialisation. This will only be called if `self.train=True`
         """
 
+        # check if the path exists
+        if not os.path.exists(self.label_path):
+            raise Exception("Label path does not exist! Please check if the right label path is passed in")
+
+        # iterate through the labels and record in the data dict
         data_info = pd.read_csv(self.label_path)
         for index, row in data_info.iterrows():
             transcript_id = row['transcript_id']
@@ -238,7 +285,7 @@ class RNAData(Dataset):
 
 
         test_transcript_position = [] 
-        # for the remaining genes
+        # store the remaining genes as the test genes
         for current_gene in genes:
             transcripts = self.gene_dict[current_gene]
             test_transcript_position.extend(transcripts)
@@ -275,8 +322,11 @@ class RNAData(Dataset):
         if not self.train:
             np.random.seed(self.seed)
         if self.train and self.eval:
+            # only if we are using eval (from training), we will use test_transcript
             id_position = self.test_transcript_position[index]
         else:
+            # if we are using training data or just running predictions, we will use
+            # train_transcript_position
             id_position = self.train_transcript_position[index]
         
         # get the relevant data for the current site
@@ -327,6 +377,7 @@ class RNAData(Dataset):
 
         # if this is a training set of data, we will use a weighted sampler
         if self.train and not self.eval:
+            # counting the number of positive and negative labels to know the weights to give them
             overall_labels = [self.data_dict[train_transcript]['label'] for train_transcript in self.train_transcript_position]
             positive_label = sum(overall_labels)
             negative_label = len(overall_labels) - positive_label
@@ -343,5 +394,5 @@ class RNAData(Dataset):
 
             return DataLoader(self, batch_size=self.batch_size, sampler=sampler)
 
-        # if we are evaluating then there is no need to oversample
+        # if we are evaluating / predicting then there is no need to oversample
         return DataLoader(self, batch_size=self.batch_size)

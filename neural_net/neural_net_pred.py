@@ -32,6 +32,8 @@ def parse_arguments():
                         help="Batch size that was used for training the Neural Network (Default: 128)")
     optional.add_argument("-rs", "--read-size", type=int, default=20 , metavar="", 
                         help="Read size that was used for training the Neural Network (Default: 20)")
+    optional.add_argument("-snx", "--sg-Nex", type=bool, default=False , metavar="", 
+                        help="Flag for if we are predicting on SgNex data (Default: False)")
     args = parser.parse_args()
     return args
 
@@ -49,7 +51,7 @@ def predict_neural_network(args):
 
     # initialising the model and dataloader
     rna_data = RNAData(data_path=args.data_path, read_size=args.read_size,
-                       batch_size=args.batch_size, train=False)
+                       batch_size=args.batch_size, train=False, sgNex=args.sg_Nex)
     rna_dataloader = rna_data.data_loader()
 
     # initialising the neural net model
@@ -99,6 +101,7 @@ def predict_neural_network(args):
     transcript_id = list(map(lambda x : rna_test_sites[x][0], site_indices))
     transcript_position = list(map(lambda x : rna_test_sites[x][1], site_indices))
 
+    # saving the output
     final_data = pd.DataFrame({"transcript_id" : transcript_id,
                             "transcript_position" : transcript_position,
                             "score" : pred_scores})
