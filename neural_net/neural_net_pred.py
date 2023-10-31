@@ -13,7 +13,6 @@ import torch.nn as nn
 from neural_net_model import NeuralNetModel
 from neural_net_pre_process import RNAData
 
-# CONSTANTS
 def parse_arguments():
     """Parses the arguments that are supplied by the user
 
@@ -29,19 +28,13 @@ def parse_arguments():
     optional = parser.add_argument_group("optional arguments")
     optional.add_argument("-rf", "--results-folder", type=str, default=os.path.join(".", "results"), metavar="",
                         help="Full path to the directory where the result of the prediction should be stored. (Default: ./results/)")
-    optional.add_argument("-bts", "--batch-size", type=int, default=64, metavar="",
-                        help="Batch size that was used for training the Neural Network (Default: 64)")
+    optional.add_argument("-bts", "--batch-size", type=int, default=128, metavar="",
+                        help="Batch size that was used for training the Neural Network (Default: 128)")
     optional.add_argument("-rs", "--read-size", type=int, default=20 , metavar="", 
                         help="Read size that was used for training the Neural Network (Default: 20)")
     args = parser.parse_args()
     return args
 
-MODEL_STATE_DICT = os.path.join(".", "state", "model_param.pth") 
-DATA_FOLDER_PATH = os.path.join(".", "data") 
-RESULTS_FOLDER_PATH = os.path.join(".", "results")
-DATA_FILE_NAME = "dataset2.json.gz"
-BATCH_SIZE = 64 # note that this needs to be the same the training process
-READ_SIZE = 20 # note that this needs to be the same the training process
 
 def predict_neural_network(args):
     """Runs predictions on a trained NeuralNetModel based on the arguments that are passed in by the user
@@ -61,7 +54,10 @@ def predict_neural_network(args):
 
     # initialising the neural net model
     model = NeuralNetModel(batch_size=args.batch_size, read_size=args.read_size)
-    model.load_state_dict(torch.load(args.modelstate_dict))
+    
+    # loading the model_state_dict
+    checkpoint = torch.load(args.modelstate_dict)
+    model.load_state_dict(checkpoint["model_state_dict"])
     model.eval() # set to evaluation mode
 
     # create the results directory if it doesnt exist
@@ -98,6 +94,7 @@ def predict_neural_network(args):
     # tidying up the data and converting into csv
     pred_scores = pred_scores.numpy().flatten().astype(float)
 
+    # extracting the transcript_id and transcript_position of the predictions
     rna_test_sites = rna_data.train_transcript_position
     transcript_id = list(map(lambda x : rna_test_sites[x][0], site_indices))
     transcript_position = list(map(lambda x : rna_test_sites[x][1], site_indices))
@@ -109,5 +106,6 @@ def predict_neural_network(args):
     print("Output file saved!")
 
 if __name__ == "__main__":
+    torch.manual_seed(4266)
     args = parse_arguments()
     predict_neural_network(args)

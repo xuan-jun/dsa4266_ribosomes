@@ -6,7 +6,7 @@ The `NeuralNetModel` is a `pytorch` neural network model.
 
 ```
 neural_net/
-├── init.py
+├── __init__.py
 ├── neural_net_model.py
 ├── neural_net_pre_process.py
 ├── neural_net_pred.py
@@ -57,13 +57,21 @@ python -m neural_net_training --help
 
 * `-msd` or `--modelstate-dict` - Full filepath to where we want to store the model state (*Default: ./state/model.pth*) 
 
-* `-lr` or `--learning-rate` - Learning rate for the Neural Network (*Default: 0.001*) 
+* `-cpd` or `--checkpoint-dict` - Full filepath to the checkpoint dictionary, this is required if you want to continue training from the previous round (*Default: ''*) 
 
-* `-bts` or `--batch-size` - Batch size for the Neural Network (*Default: 64*) 
+* `-erp` or `--evalresults-path` - Full filepath to where the evaluation results should be saved to (*Default: ./eval_results/eval_res.csv*) 
+
+* `-lr` or `--learning-rate` - Learning rate for the Neural Network (*Default: 0.01*) 
+
+* `-wd` or `--weight-decay` - Weight Decay for the AdamW Optimiser (*Default:0.01*) 
+
+* `-bts` or `--batch-size` - Batch size for the Neural Network (*Default: 128*) 
 
 * `-rs` or `--read-size` - Read size for the Neural Network (*Default: 20*) 
 
-* `-ep` or `--num-epochs` - Number of epochs for training the Neural Network (*Default: 30*) 
+* `-ep` or `--num-epochs` - Number of epochs for training the Neural Network (*Default: 5*) 
+
+* `-ts` or `--train-size` - Size of training set, number between 0 and 1 (*Default: 0.8*) 
 
 ### Example command
 
@@ -95,11 +103,11 @@ python -m neural_net_pred --help
 
 **Optional Arguments**
 
-* `-rf` or `--results-folder` - Full path to the directory where the result of the prediction should be stored. (Default: ./results/)
+* `-rf` or `--results-folder` - Full path to the directory where the result of the prediction should be stored. (*Default: ./results/*)
 
-* `-bts` or `--batch-size` - Batch size that was used for training the Neural Network (Default: 64)
+* `-bts` or `--batch-size` - Batch size that was used for training the Neural Network (*Default: 128*)
 
-* `-rs` or `--read-size` - Read size that was used for training the Neural Network (Default: 20)
+* `-rs` or `--read-size` - Read size that was used for training the Neural Network (*Default: 20*)
 
 ### Example command
 

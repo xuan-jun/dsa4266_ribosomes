@@ -1,5 +1,6 @@
 # general purpose libraries
 import numpy as np
+import pandas as pd
 import os
 from tqdm import tqdm
 import argparse
@@ -91,15 +92,25 @@ def parse_arguments():
     optional.add_argument('-msd', '--modelstate-dict',
                         metavar='', type=str, default=os.path.join(".", "state", "model.pth"),
                         help="Full filepath to where we want to store the model state (Default: ./state/model.pth)")
+    optional.add_argument('-cpd', '--checkpoint-dict',
+                        metavar='', type=str, default="",
+                        help="Full filepath to the checkpoint dictionary, this is required if you want to continue training from the previous round (Default: '')")
+    optional.add_argument('-erp', '--evalresults-path',
+                        metavar='', type=str, default=os.path.join(".", "eval_result", "eval_res.csv"),
+                        help="Full filepath to where the evaluation results should be saved to (Default: './eval_results/eval_res.csv')")
     optional.add_argument('-lr', '--learning-rate',
-                        metavar='', type=float, default=0.001, help="Learning rate for the Neural Network (Default:0.001)")
+                        metavar='', type=float, default=0.01, help="Learning rate for the Neural Network (Default:0.01)")
+    optional.add_argument('-wd', '--weight-decay',
+                        metavar='', type=float, default=0.01, help="Weight Decay for the AdamW Optimiser (Default:0.01)")
     optional.add_argument('-bts', '--batch-size',
-                        metavar='', type=int, default=64, help="Batch size for the Neural Network (Default: 64)")
+                        metavar='', type=int, default=128, help="Batch size for the Neural Network (Default: 128)")
     optional.add_argument('-rs', '--read-size',
                         metavar='', type=int, default=20,
                         help="Number of reads that is used per site for prediction by the Neural Network (Default: 20)")
     optional.add_argument('-ep', '--num-epochs',
-                        metavar='', type=int, default=30, help="Number of epochs for training the Neural Network (Default: 30)")
+                        metavar='', type=int, default=5, help="Number of epochs for training the Neural Network (Default: 5)")
+    optional.add_argument('-ts', '--train-size',
+                        metavar='', type=float, default=0.8, help="Size of training set, number between 0 and 1 (Default: 0.8)")
     args = parser.parse_args()
     return args
 
@@ -160,22 +171,44 @@ def train_neural_net(args):
 
     # preparing the data
     rna_data = RNAData(data_path=args.data_path, label_path=args.label_path,
-                       batch_size=args.batch_size, read_size=args.read_size)
-    print(f"Length of training data: {len(rna_data)}")
+                       batch_size=args.batch_size, read_size=args.read_size,
+                       train_size=args.train_size)
     rna_dataloader = rna_data.data_loader()
 
-    # initalizing the model
+    # check if the user passed in the checkpoint_dict it should exist else raise Exception
+    if args.checkpoint_dict and not (os.path.exists(args.checkpoint_dict)):
+        raise Exception("Checkpoint directory stated does not exist, please check if the right directory is given")
+    
+    # assign the checkpoint value
+    checkpoint = torch.load(args.checkpoint_dict) if args.checkpoint_dict else {}
+
+    # creating the model object
     model = NeuralNetModel(batch_size=args.batch_size, read_size=args.read_size)
+    if checkpoint:
+        model.load_state_dict(checkpoint['model_state_dict'])
 
     # binary cross entropy loss function
     criterion = nn.BCELoss()
-    optimizer = torch.optim.Adam(model.parameters(), lr=args.learning_rate)
+    # adamW optimiser
+    optimizer = torch.optim.AdamW(model.parameters(), lr=args.learning_rate, weight_decay=args.weight_decay)
+    if checkpoint:
+        optimizer.load_state_dict(checkpoint['optimizer_state_dict'])
+        loss = checkpoint['loss']
 
     # check if the state dictionary exists, if it doesnt, create it
     if not (os.path.exists(os.path.dirname(args.modelstate_dict))):
         os.mkdir(os.path.dirname(args.modelstate_dict))
 
+    # check if the eval results dictionary exists, if it doesnt, create it
+    if not (os.path.exists(os.path.dirname(args.evalresults_path))):
+        os.mkdir(os.path.dirname(args.evalresults_path))
+
+    # creating the early stopper object
     early_stopper = EarlyStopper(patience=3, min_delta=0.05)
+    # records the pr and roc score for each iteration
+    pr = []
+    roc = []
+
     print("Starting Training...")
     for epoch in range(args.num_epochs):
         # set to training mode
@@ -198,19 +231,32 @@ def train_neural_net(args):
             loop.set_description(f"Epoch [{epoch+1}/{args.num_epochs}]")
             loop.set_postfix(loss=loss.item())
 
-        # evaluate to see what is the score
+        # evaluate the curr model based on evaluation set
+        # store the roc and pr results in the list that we are using to track and save the results
         roc_score, pr_score = evaluate_neural_net(model, rna_data)
+        pr.append(pr_score)
+        roc.append(roc_score)
+        pd.DataFrame({'roc_score':roc, 'pr_score':pr}).to_csv(args.evalresults_path)
+        
         # saving the model parameters
         if (roc_score + pr_score) >= early_stopper.max_roc_pr:
-            torch.save(model.state_dict(), args.modelstate_dict)
+            # torch.save(model.state_dict(), args.modelstate_dict)
+            torch.save({
+            'epoch': epoch,
+            'model_state_dict': model.state_dict(),
+            'optimizer_state_dict': optimizer.state_dict(),
+            'loss': loss
+            }, args.modelstate_dict)
         # check if early stop is required
         if early_stopper.early_stop(roc_score + pr_score):
             break
 
     # evaluation
+    print("Training Ended...")
     evaluate_neural_net(model, rna_data)
 
 
 if __name__ == "__main__":
+    torch.manual_seed(4266)
     args = parse_arguments()
     train_neural_net(args)

@@ -92,7 +92,7 @@ class RNAData(Dataset):
         returns a DataLoader object with the current Dataset.
     """
 
-    def __init__(self, data_path=None, label_path=None, read_size=20, batch_size=128, train=True, train_size=0.8) -> None:
+    def __init__(self, data_path=None, label_path=None, read_size=20, batch_size=128, train=True, train_size=0.8, seed=1800) -> None:
         """Constructor for the RNAData class
 
         Args:
@@ -102,6 +102,7 @@ class RNAData(Dataset):
             batch_size (int, optional): Number of sites we will use per batch for our Neural Network. Defaults to 128.
             train (bool, optional): Indicator if this Dataset should be a training set or not. Defaults to True.
             train_size (float, optional): Training size for the datset, this will only be used if train=True. Defaults to 0.8.
+            seed (int, optional): Seed for reproducibility of results. Defaults to 1800.
         """
         self.data_path = data_path
         self.train = train
@@ -110,6 +111,7 @@ class RNAData(Dataset):
         self.data_dict = {}
         self.fivemer_mapping = {}
         self.kmer_sequence_mapping = {}
+        self.seed = seed
 
         print("Currently pre processing ...")
         self.pre_process_data()
@@ -207,7 +209,7 @@ class RNAData(Dataset):
         # get the 3-mers for each 5-mer that we can have
         self.kmer_sequence_mapping = {seq : [fivemer_mapping[seq[i:i+5]] for i in range(len(seq)-4)] for seq in POSSIBLE_KMER_SEQUENCES}
     
-    def train_test_split(self, seed=4266):
+    def train_test_split(self):
         """
         Splits the data into training set and testing set based on their `gene_id` with the training size being `self.train_size`
 
@@ -220,7 +222,7 @@ class RNAData(Dataset):
         threshold_amount = self.train_size * self.length
 
         # shuffling the gene_ids that are present in the dataset
-        random.seed(seed)
+        random.seed(self.seed)
         genes = list(self.gene_dict.keys())
         random.shuffle(genes)
 
@@ -270,6 +272,8 @@ class RNAData(Dataset):
             self.length = len(self.test_transcript_position)
 
     def __getitem__(self, index):
+        if not self.train:
+            np.random.seed(self.seed)
         if self.train and self.eval:
             id_position = self.test_transcript_position[index]
         else:
@@ -284,7 +288,12 @@ class RNAData(Dataset):
         fivemer_indices = np.tile(self.kmer_sequence_mapping[kmer_sequence], (self.read_size, 1))
 
         # select 20 samples without replacement
-        selected_signals = np.array(signal_features)[np.random.choice(len(signal_features), self.read_size, replace=False), :]
+        if len(signal_features) < self.read_size:
+            # if there isnt enough reads then we will sample with replacement
+            indices = np.concatenate([np.arange(len(signal_features)), np.random.choice(len(signal_features), self.read_size - len(signal_features), replace=True)])
+            selected_signals = np.array(signal_features)[indices, :]
+        else:
+            selected_signals = np.array(signal_features)[np.random.choice(len(signal_features), self.read_size, replace=False), :]
 
         x = np.concatenate((selected_signals, fivemer_indices), axis=1)
         x = torch.from_numpy(x)
@@ -313,6 +322,8 @@ class RNAData(Dataset):
             DataLoader: `DataLoader` object that helps to generate the data in the current Dataset which
             can be used by the Neural Network.
         """
+        if not self.train:
+            torch.manual_seed(self.seed)
 
         # if this is a training set of data, we will use a weighted sampler
         if self.train and not self.eval:
