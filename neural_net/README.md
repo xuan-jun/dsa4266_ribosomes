@@ -1,6 +1,6 @@
 # Team Ribosomes Neural Network Model
 
-The `NeuralNetModel` is a `pytorch` neural network model.
+The `NeuralNetModel` is a `pytorch` neural network model that our team has developed for detection of m6a RNA modifications.
 
 ## Folder Structure
 
@@ -10,8 +10,7 @@ neural_net/
 ├── neural_net_model.py
 ├── neural_net_pre_process.py
 ├── neural_net_pred.py
-├── neural_net_training.py
-└── requirements.txt
+└── neural_net_training.py
 ```
 
 * `neural_net_model.py` - Contains the `NeuralNetModel` neural network definition of the model
@@ -22,19 +21,13 @@ neural_net/
 
 * `neural_net_training.py` - Contains the code for carrying out training on the `NeuralNetModel`
 
-* `requirements.txt` - Specifies the libraries required for the program to run
+## Training the Model
 
-## Setup
-
-1. Ensure that you have **Python** installed on your device
-
-2. Install the necessary libraries required. You can run the following bash command
+Before training the model, ensure that you are in the current directory, `dsa4266_ribosomes/neural_net`. You can run the following command if you are in the `dsa4266_ribosomes` folder.
 
 ```bash
-pip install -r requirements.txt
+cd neural_net
 ```
-
-## Training the Model
 
 To train the model, you can pass in the relevant arguments into the `neural_net_training` module and it will run the training process of the model.
 
@@ -47,31 +40,26 @@ python -m neural_net_training --help
 ```
 ## Flags that are available:
 
-**Required Arguments**
+**Required Arguments:** These arguments needs to be passed in for the program to run
 
-* `-dp` or `--data-path` - Full path to the `.json.gz` file containing the data for training
+| short flag | long flag | description | type | 
+|   :---:    |   :---:   | :---        | :--: | 
+| `-dp` | `--data-path` | Full path to the `.json.gz` file containing the data for training | `str` |
+| `-lp` | `--label-path` | Full path to the `.info` file containing the labels of the data used for training | `str` |
 
-* `-lp` or `--label-path` - Full path to the `.info` file containing the labels of the data used for training
+**Optional Arguments:** These arguments do not need to be passed in for the program to run
 
-**Optional Arguments**
-
-* `-msd` or `--modelstate-dict` - Full filepath to where we want to store the model state (*Default: ./state/model.pth*) 
-
-* `-cpd` or `--checkpoint-dict` - Full filepath to the checkpoint dictionary, this is required if you want to continue training from the previous round (*Default: ''*) 
-
-* `-erp` or `--evalresults-path` - Full filepath to where the evaluation results should be saved to (*Default: ./eval_results/eval_res.csv*) 
-
-* `-lr` or `--learning-rate` - Learning rate for the Neural Network (*Default: 0.01*) 
-
-* `-wd` or `--weight-decay` - Weight Decay for the AdamW Optimiser (*Default:0.01*) 
-
-* `-bts` or `--batch-size` - Batch size for the Neural Network (*Default: 128*) 
-
-* `-rs` or `--read-size` - Read size for the Neural Network (*Default: 20*) 
-
-* `-ep` or `--num-epochs` - Number of epochs for training the Neural Network (*Default: 5*) 
-
-* `-ts` or `--train-size` - Size of training set, number between 0 and 1 (*Default: 0.8*) 
+| short flag | long flag | description | type | defaults |
+|   :---:    |   :---:   | :---        | :--: |   :--:   |
+| `-msd` | `--modelstate-dict` | Full filepath to where we want to store the model state | `str` | **./state/model.pth** |
+| `-cpd` | `--checkpoint-dict` | Full filepath to the checkpoint dictionary, this is required if you want to continue training from the previous round | `str` | **''** | 
+| `-erp` | `--evalresults-path` | Full filepath to where the evaluation results should be saved to | `str` | **./eval_results/eval_res.csv** |
+| `-lr` | `--learning-rate` | Learning rate for the Neural Network | `float` | **0.01** |
+| `-wd` | `--weight-decay` | Weight Decay for the AdamW Optimiser | `float` | **0.01** |
+| `-bts` | `--batch-size` | Batch size for the Neural Network | `int` | **128** | 
+| `-rs` | `--read-size` | Read size for the Neural Network | `int` | **20** | 
+| `-ep` | `--num-epochs` | Number of epochs for training the Neural Network | `int` | **5** | 
+| `-ts` | `--train-size` | Size of training set, number between 0 and 1 | `float` | **0.8** | 
 
 ### Example command
 
@@ -84,7 +72,13 @@ python -m neural_net_training --data-path <path_to_data_file> \
 
 ## Making Predictions with the Model
 
-Note that you can only make predictions after you have trained the model
+Before training the model, ensure that you are in the current directory, `dsa4266/neural_net`. You can run the following command if you are in the `dsa4266` folder.
+
+```bash
+cd neural_net
+```
+
+Note that you can only make predictions after you have trained the model.
 
 **File**: `neural_net_pred.py`
 
@@ -95,19 +89,21 @@ python -m neural_net_pred --help
 ```
 ### Flags that are available:
 
-**Required Arguments**
+**Required Arguments:** These arguments needs to be passed in for the program to run
 
-* `-msd` or `--modelstate-dict` - Full filepath to where the model state dict is stored during the Neural Network training 
+| short flag | long flag | description | type | 
+|   :---:    |   :---:   | :---        | :--: | 
+| `-msd` | `--modelstate-dict` | Full filepath to where the model state dict is stored during the Neural Network training | `str` |
+| `-dp`  | `--data-path` | Full filepath to where the `.json.gz` file of the data that we want to predict is located | `str` |
 
-* `-dp` or `--data-path` - Full filepath to where the `.json.gz` file of the data that we want to predict is located 
+**Optional Arguments:** These arguments do not need to be passed in for the program to run
 
-**Optional Arguments**
-
-* `-rf` or `--results-folder` - Full path to the directory where the result of the prediction should be stored. (*Default: ./results/*)
-
-* `-bts` or `--batch-size` - Batch size that was used for training the Neural Network (*Default: 128*)
-
-* `-rs` or `--read-size` - Read size that was used for training the Neural Network (*Default: 20*)
+| short flag | long flag | description | type | defaults |
+|   :---:    |   :---:   | :---        | :--: |   :--:   |
+| `-rf` | `--results-folder` | Full path to the directory where the result of the prediction should be stored. | `str` | **./results/** |
+| `-bts`| `--batch-size` | Batch size that was used for training the Neural Network | `int` | **128** |
+| `-rs` | `--read-size` | Read size that was used for training the Neural Network | `int` | **20** |
+| `-snx`| `--sg-Nex` | Flag for if we are predicting on SgNex data | `bool` |**False** |
 
 ### Example command
 
