@@ -100,11 +100,30 @@ def predict_neural_network(args):
     rna_test_sites = rna_data.train_transcript_position
     transcript_id = list(map(lambda x : rna_test_sites[x][0], site_indices))
     transcript_position = list(map(lambda x : rna_test_sites[x][1], site_indices))
+    rna_data_dict = rna_data.data_dict
+    
+    # if we are process SG-NEx data, include kmer_sequence as well for post analysis
+    if args.sg_Nex:
+        kmer_sequence = []
+        # iterate through every transcript_id and transcript_position
+        for i in range(len(transcript_id)):
+            curr_transcript_id = transcript_id[i]
+            curr_transcript_position = transcript_position[i]
+            # extract the current site info 
+            curr_data = rna_data_dict[(curr_transcript_id, curr_transcript_position)]
+            # appending the kmer_sequence for the current site 
+            kmer_sequence.append(curr_data['kmer_sequence'])
+        final_data = pd.DataFrame({"transcript_id" : transcript_id,
+                                "transcript_position" : transcript_position,
+                                "kmer_sequence" : kmer_sequence,
+                                "score" : pred_scores})
+    # if task 1 data, don't include the kmer sequence
+    else:
+        final_data = pd.DataFrame({"transcript_id" : transcript_id,
+                                "transcript_position" : transcript_position,
+                                "score" : pred_scores})
 
     # saving the output
-    final_data = pd.DataFrame({"transcript_id" : transcript_id,
-                            "transcript_position" : transcript_position,
-                            "score" : pred_scores})
     final_data.to_csv(os.path.join(args.results_folder, results_file_name), index=False)
     print("Output file saved!")
 
