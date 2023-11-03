@@ -6,12 +6,16 @@ The `NeuralNetModel` is a `pytorch` neural network model that our team has devel
 
 ```
 neural_net/
+├── state/
+│   └── sample_model.pth
 ├── __init__.py
 ├── neural_net_model.py
 ├── neural_net_pre_process.py
 ├── neural_net_pred.py
 └── neural_net_training.py
 ```
+
+* `state/` - Contains all the model states for the trained neural networks. It contains `sample_model.pth` which is a sample model state that has been pretrained based on the default settings of the `NeuralNetModel` and `neural_net_training.py`. 
 
 * `neural_net_model.py` - Contains the `NeuralNetModel` neural network definition of the model
 
@@ -61,14 +65,28 @@ python -m neural_net_training --help
 | `-ep` | `--num-epochs` | Number of epochs for training the Neural Network | `int` | **5** | 
 | `-ts` | `--train-size` | Size of training set, number between 0 and 1 | `float` | **0.8** | 
 
-### Example command
+### Run training on your own dataset
 
-You can make use of the following command in bash to run the training process for your model. Note that you will have to pass in `--data-path` and `--label-path` since they are required arguments.
+You can make use of the following command in bash to run the training process for your model and pass in the relevant optional flags should you want to change any of the training parameters. Note that you will have to pass in `--data-path` and `--label-path` since they are required arguments.
 
 ```bash
-python -m neural_net_training --data-path <path_to_data_file> \
-    --label-path <path_to_label_data>
+python -m neural_net_training --data-path <path_to_data_file> --label-path <path_to_label_data>
 ```
+During training, the evaluation results (based on the Area under ROC and PRC) on the evaluation set will be saved in `./eval_result/eval_res.csv`. Note that this can be changed with the `--evalresults-path` flag. 
+
+The `modelstate-dict` will also be saved as `./state/model.pth` which you can use in the prediction step below.
+
+### Run training with sample dataset
+
+To run the training model with the sample dataset: `../data/sample.json.gz`, you can run the following command in bash. You can pass in other optional flags as well should you want to change any of the training parameters.
+
+```bash
+python -m neural_net_training --data-path "../data/sample.json.gz" --label-path "../data/sample.info"
+```
+
+During training, the evaluation results (based on the Area under ROC and PRC) on the evaluation set will be saved in `./eval_result/eval_res.csv`. Note that this can be changed with the `--evalresults-path` flag. 
+
+The `modelstate-dict` will also be saved as `./state/model.pth` which you can use in the prediction step below.
 
 ## Making Predictions with the Model
 
@@ -78,7 +96,7 @@ Before training the model, ensure that you are in the current directory, `dsa426
 cd neural_net
 ```
 
-Note that you can only make predictions after you have trained the model.
+**Note**: You can still make predictions without going through the above step of training the model. You can make use of the sample `modelstate-dict` that is stored within `./state/sample_model.pth`.
 
 **File**: `neural_net_pred.py`
 
@@ -105,11 +123,22 @@ python -m neural_net_pred --help
 | `-rs` | `--read-size` | Read size that was used for training the Neural Network | `int` | **20** |
 | `-snx`| `--sg-Nex` | Flag for if we are predicting on SgNex data | `bool` |**False** |
 
-### Example command
+### Run predictions with your own dataset
 
 You can make use of the following command in bash to run predictions on your model. Note that you will have to pass in `--modelstate-dict` and `--data-path` since they are required arguments.
 
+**Note**: You can make use of the sample `modelstate-dict` if you did not train your own model. The path to the sample model state is `./state/sample_model.pth`
+
 ```bash
-python -m neural_net_pred --modelstate-dict <path_to_model_state_dict> \
-    --data-path <path_to_prediction_data>
+python -m neural_net_pred --modelstate-dict <path_to_model_state_dict> --data-path <path_to_prediction_data>
 ```
+After the prediction is ran, the prediction results will be in `./results/<data_path_prefix>.csv` where the prefix is the file name before `.json.gz`.
+
+### Run predictions with sample dataset 
+
+You can make use of the following command in bash to run predictions on the sample dataset.
+
+```bash
+python -m neural_net_pred --modelstate-dict "./state/sample_model.pth"  --data-path "../data/sample.json.gz"
+```
+After the prediction is ran, the prediction results will be in `./results/sample.csv`.
