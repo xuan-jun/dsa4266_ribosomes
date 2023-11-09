@@ -160,3 +160,7 @@ cython_debug/
 #.idea/
 data/data.info
 data/dataset0.json.gz
+data/labelled_agg.csv
+data/labelled_w_features.csv
+*.gz
+*.csv
