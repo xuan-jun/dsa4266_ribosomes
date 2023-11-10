@@ -39,8 +39,10 @@ To train the model, you can pass in the relevant arguments into the `neural_net_
 
 You can run the following command to find out the parameters that can be passed into the training the neural network.
 
+*(If you are running on Windows, change `python3` to `python`)*
+
 ```python
-python -m neural_net_training --help
+python3 -m neural_net_training --help
 ```
 ## Flags that are available:
 
@@ -69,8 +71,10 @@ python -m neural_net_training --help
 
 You can make use of the following command in bash to run the training process for your model and pass in the relevant optional flags should you want to change any of the training parameters. Note that you will have to pass in `--data-path` and `--label-path` since they are required arguments.
 
+*(If you are running on Windows, change `python3` to `python`)*
+
 ```bash
-python -m neural_net_training --data-path <path_to_data_file> --label-path <path_to_label_data>
+python3 -m neural_net_training --data-path <path_to_data_file> --label-path <path_to_label_data>
 ```
 During training, the evaluation results (based on the Area under ROC and PRC) on the evaluation set will be saved in `./eval_result/eval_res.csv`. Note that this can be changed with the `--evalresults-path` flag. 
 
@@ -80,8 +84,10 @@ The `modelstate-dict` will also be saved as `./state/model.pth` which you can us
 
 To run the training model with the sample dataset: `../data/sample.json.gz`, you can run the following command in bash. You can pass in other optional flags as well should you want to change any of the training parameters.
 
+*(If you are running on Windows, change `python3` to `python`)*
+
 ```bash
-python -m neural_net_training --data-path "../data/sample.json.gz" --label-path "../data/sample.info"
+python3 -m neural_net_training --data-path "../data/sample.json.gz" --label-path "../data/sample.info"
 ```
 
 During training, the evaluation results (based on the Area under ROC and PRC) on the evaluation set will be saved in `./eval_result/eval_res.csv`. Note that this can be changed with the `--evalresults-path` flag. 
@@ -102,8 +108,10 @@ cd neural_net
 
 You can run the following command in bash to find out the parameters that can be passed into the prediction of the neural network.
 
+*(If you are running on Windows, change `python3` to `python`)*
+
 ```bash
-python -m neural_net_pred --help
+python3 -m neural_net_pred --help
 ```
 ### Flags that are available:
 
@@ -127,10 +135,12 @@ python -m neural_net_pred --help
 
 You can make use of the following command in bash to run predictions on your model. Note that you will have to pass in `--modelstate-dict` and `--data-path` since they are required arguments.
 
+*(If you are running on Windows, change `python3` to `python`)*
+
 **Note**: You can make use of the sample `modelstate-dict` if you did not train your own model. The path to the sample model state is `./state/sample_model.pth`
 
 ```bash
-python -m neural_net_pred --modelstate-dict <path_to_model_state_dict> --data-path <path_to_prediction_data>
+python3 -m neural_net_pred --modelstate-dict <path_to_model_state_dict> --data-path <path_to_prediction_data>
 ```
 After the prediction is ran, the prediction results will be in `./results/<data_path_prefix>.csv` where the prefix is the file name before `.json.gz`.
 
@@ -138,7 +148,9 @@ After the prediction is ran, the prediction results will be in `./results/<data_
 
 You can make use of the following command in bash to run predictions on the sample dataset.
 
+*(If you are running on Windows, change `python3` to `python`)*
+
 ```bash
-python -m neural_net_pred --modelstate-dict "./state/sample_model.pth"  --data-path "../data/sample.json.gz"
+python3 -m neural_net_pred --modelstate-dict "./state/sample_model.pth"  --data-path "../data/sample.json.gz"
 ```
 After the prediction is ran, the prediction results will be in `./results/sample.csv`.
