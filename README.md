@@ -6,6 +6,7 @@ This repository contains the codes that are created by Team Ribosome for the pur
 <!-- omit in toc -->
 ## Table of Content:
 
+- [Folder Structure](#folder-structure)
 - [Software Requirements](#software-requirements)
 - [Setting Up](#setting-up)
   - [Machine Setup](#machine-setup)
@@ -13,6 +14,31 @@ This repository contains the codes that are created by Team Ribosome for the pur
   - [Install Software / Packages](#install-software--packages)
 - [Running Model](#running-model)
 - [Team Members](#team-members)
+
+## Folder Structure
+
+```
+.
+├── archive/
+│   ├── initial_exploration
+│   ├── logistic_model
+│   ├── random_forest
+│   └── xgb  
+├── data/
+│   ├── sample.info
+│   └── sample.json.gz
+├── neural_net/
+└── requirements.txt
+```
+
+* `archive` - Contains all the previous codes / models that were tested previously.
+
+* `data` - Contains the sample data files where `sample.info` is the sample label file and `sample.json.gz` is the sample data file.
+
+* `neural_net` - Contains the final model that was selected by our team. This should be used for testing out the training process as well as prediction process.
+
+* `requirements.txt` - Contains the Python libraries that needs to be downloaded within the machine for the model to work.
+
 
 ## Software Requirements
 
@@ -46,6 +72,8 @@ After the repository has been cloned over successfully, run the following comman
 
 1. **Installing `pip`**
 
+*The following instructions is only if you are using an AWS instance. If you are running locally, `pip` should have been installed with Python.*
+
 Note that when you are prompted to confirm, just enter "*y*"
 
 ```bash
@@ -53,6 +81,8 @@ sudo apt install python3-pip
 ```
 
 2. **Installing packages required**
+
+*(If you are running on Windows, change `pip3` to `pip`)*
 
 Ensure that you are within the `dsa4266_ribosomes` folder before running the following command
 
